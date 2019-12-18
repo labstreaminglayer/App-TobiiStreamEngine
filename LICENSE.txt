@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2018 Tristan Stenner
+Copyright (c) 2019 Chadwick Boulay
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,3 +34,6 @@ https://github.com/labstreaminglayer/liblsl/blob/master/LICENSE
 
 LSL Best Practices GUI Example, MIT
 https://github.com/labstreaminglayer/App-BestPracticesGUI/blob/master/LICENSE.txt
+
+Tobii Stream Engine License
+https://developer.tobii.com/license-agreement/

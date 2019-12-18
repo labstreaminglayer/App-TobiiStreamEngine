@@ -1,59 +1,46 @@
-Click on the green "Use this template" button on GitHub to generate a repository from this template.
-Then edit this README.md to delete this text and replace the below text for your own app.
-
 # Application Description
 
-Use this section to describe your application.
-
-The template app doesn't send any useful data, but provides a starting point to develop your own apps. 
-This app is written in C++ and uses the Qt framework.
-
-The important source files are listed below:
-
-- `main.cpp` is the entry point
-- `mainwindow.cpp` contains the UI code and code to access the recording device
-- `mainwindow.h` is the corresponding header
+Stream data from Tobii consumer devices over LSL.
 
 ## Dependencies
 
-Use this section to describe what libraries/tools are required to RUN this application.
-Build dependencies should be listed in the build instructions elsewhere.
+Download and unzip the Stream Engine for Windows x64 from the bottom of
+[this page](https://developer.tobii.com/consumer-eye-trackers/stream-engine/getting-started/).
+I downloaded stream_engine_windows_x64_4.1.0.3.zip and unzipped it into D:\Tools\Misc\stream_engine_windows_x64
 
-For example, if the data provider uses a server/client architecture,
-then the user will need to download, install, and run the server.
-
-If the application requires a device library (typically a DLL on Windows, sometimes shipped in an SDK),
-then instruct the user on how to obtain the library and how to install it on their system.
-For example, "You must obtain the device_client.dll from the manufacturer. Copy that dll file into the
-same folder as this application executable."
-
-This template application has no dependencies.
+Download and unzip the latest liblsl binaries for Win64 from [the liblsl release page](https://github.com/sccn/liblsl/releases).
+I downloaded liblsl-1.13.0-Win64.7z. I unzipped into D:\Tools\Misc\liblsl_install
 
 ## Download
 
-Use this section to describe how/where to download prebuilt applications.
-Typically this means using the GitHub repository release page.
+When the app is done, downloads will be available on the releases page.
 
 # Build
 
-Use this section to provide build instructions.
-Alternatively, provide all build instructions in a separate BUILD.md
+Follow the generic LSL-App build instructions for building apps using
+Visual Studio's integrated CMake. See [here](https://labstreaminglayer.readthedocs.io/dev/build.html#configure-cmake-options-in-vs-2017-vs-2019).
+Note the docs are a bit confusing right now. This should be updated soon.
 
-This template build configuration is defined in CMakeLists.txt.
-Use cmake to configure (and build) the application,
-or use cmake to generate a project for your preferred IDE,
-or use your IDE's integrated cmake functionality (e.g., Visual Studio >= 2017)
+Here is what I had to add to my CMakeSettings.json:
+
+```
+,
+      "variables": [
+        {
+          "name": "Qt5_DIR",
+          "value": "C:\\Qt\\5.11.1\\msvc2017_64\\lib\\cmake\\Qt5 "
+        },
+        {
+          "name": "Tobii_ROOT",
+          "value": "D:\\Tools\\Misc\\stream_engine_windows_x64"
+        },
+        {
+          "name": "LSL_INSTALL_ROOT",
+          "value": "D:\\Tools\\Misc\\liblsl_install"
+        }
+```
 
 # License
 
-Since using this app as a starting point is actively encouraged, it is licensed
-under the [MIT](https://choosealicense.com/licenses/mit/) license.
-
-If you want others to share the code to derivatives of your app, you should
-consider licensing your app under a less permissive license like the
-[MPL](https://choosealicense.com/licenses/mpl-2.0/) or
-[GPL](https://choosealicense.com/licenses/gpl-3.0/).
-
-Even in case you want to keep the MIT license, change the `LICENSE.txt` to
-reflect that you're the copyright holder.
+Please see the included LICENSE.txt
 

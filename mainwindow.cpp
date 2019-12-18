@@ -21,6 +21,8 @@
 #include <lsl_cpp.h>
 #include <string>
 #include <vector>
+//: Device headers
+#include <tobii/tobii.h>
 
 
 /*: The constructor mainly sets up the `Ui::MainWindow` class and creates the

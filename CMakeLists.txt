@@ -11,9 +11,9 @@ cmake_minimum_required(VERSION 3.5)
 #: was chosen because it is the first version to support imported targets
 #: (e.g. `boost::thread`). Before setting this to a higher version, please check
 #: if it has arrived in [debian stable](https://packages.debian.org/stable/cmake).
-project(BestPracticesGUI
+project(TobiiStreamEngine
 	LANGUAGES CXX
-	VERSION 1.13.0)
+	VERSION 0.1)
 
 #: [project](https://cmake.org/cmake/help/latest/command/project.html) sets the
 #: name of the app, the languages used and the version. The version is later on
@@ -59,7 +59,7 @@ find_package(liblsl REQUIRED)
 #: (https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#imported-targets)
 #: Vendor::Device -- Use this with target_link_libraries.
 
-find_package(Vendor QUIET)
+find_package(Tobii REQUIRED)
 
 # Find our custom package. But we set this to QUIET because it will fail.
 # You should set yours to REQUIRED
@@ -115,7 +115,7 @@ target_link_libraries(${PROJECT_NAME}
 	Qt5::Widgets
 	Threads::Threads
 	LSL::lsl
-#	Vendor::DeviceModule
+	Tobii::Tobii
 )
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
