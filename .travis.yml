@@ -1,0 +1,57 @@
+#: # `.travis.yml` ([source](../appskeleton/.travis.yml))
+#:
+#: `.travis.yml` tells [TravisCI](https://travis-ci.com) how to build the app.
+#: 
+#: See the [TravisCI help pages](https://docs.travis-ci.com/).
+#: 
+#: If you use this skeleton, you should only need to edit the following keys:
+#: - `matrix.include.os.addons.apt.packages`: additional packages required
+#:   (e.g. `qt5-default` for Qt, `libboost-XY-dev` for Boost.XY)
+#: - `matrix.include.os.before_install` for OS X packages
+#: - deployment information. See [Deployment](#deployment).
+#:
+#: ## Basic configuration
+#:
+#: We compile with clang because it produces better error messages and is faster.
+language: cpp
+dist: xenial
+compiler: clang
+#: The build environment variables.
+#: They can also be overridden in the build tool (`ci_console.html` in your local
+#: labstreaminglayer/labstreaminglayer repo) to build with a special configuration.
+env:
+  LSLDIST_URL="https://github.com/sccn/liblsl/releases/download"
+  UBUNTU_DIST="xenial"
+  LSL_VERSION="1.13.0-b12"
+  - CMakeArgs=""
+#: ## Build environment setup
+#:
+#: Linux builds aren't enabled on Travis because the experience on Appveyor and
+#: Azure Pipelines is way better.
+#:
+#: On OS X, install packages via `brew` and download and extract liblsl.
+matrix:
+  include:
+  - os: osx
+#: use the default image, if an other image version is needed check
+#: https://docs.travis-ci.com/user/reference/osx/
+#    osx_image: xcode10.1
+    before_script:
+    - travis_retry wget ${LSLDIST_URL}/${LSL_VERSION}/liblsl-1.13.0-OSX64.tar.bz2
+    - mkdir LSL; tar -xf *.tar.bz2 -C LSL
+    - export LSL_INSTALL_ROOT=LSL
+    - brew install qt
+    - export CMAKE_PREFIX_PATH=/usr/local/opt/qt/
+#: ## `script` section
+#:
+#: Steps to build the app, copy the binaries to an "installation" folder and
+#: create `.dmg` packages on OS X and `.deb` packages on Linux.
+script:
+- mkdir -p build/install
+- cd build
+- cmake --version
+- cmake -DLSL_INSTALL_ROOT=${LSL_INSTALL_ROOT} $CMakeArgs ../
+- cmake --build . --config Release --target install
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then for app in *.app; do ${CMAKE_PREFIX_PATH}/bin/macdeployqt ${app} -dmg; mv "${app%.app}.dmg" "${app%.app}-${LSL_VERSION}-OSX64.dmg}"; done; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cpack; fi
+- cd ..
