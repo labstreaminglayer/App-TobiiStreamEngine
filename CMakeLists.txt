@@ -107,8 +107,6 @@ add_executable(${PROJECT_NAME} MACOSX_BUNDLE WIN32
 	mainwindow.cpp
 	mainwindow.h
 	mainwindow.ui
-	reader.h
-	reader.cpp
 )
 target_link_libraries(${PROJECT_NAME}
 	PRIVATE
@@ -149,6 +147,23 @@ installLSLApp(${PROJECT_NAME})
 installLSLAuxFiles(${PROJECT_NAME}
 	${PROJECT_NAME}.cfg
 )
+
+# Copy the required dll's into the build folder --> useful for debugging from IDE
+# create a list of files to copy
+set(THIRD_PARTY_DLLS
+   LSL::lsl
+   Tobii::Tobii
+   Qt5::Core
+   Qt5::Gui
+   Qt5::Widgets
+)
+foreach(_lib ${THIRD_PARTY_DLLS})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different  
+            $<TARGET_FILE:${_lib}>
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endforeach()
+
 
 LSLGenerateCPackConfig()
 #: `installLSLApp` creates an install target for the binary target, so that the

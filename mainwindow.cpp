@@ -1,13 +1,8 @@
-/*: # mainwindow.cpp ([source](../appskeleton/mainwindows.cpp))
- * mainwindow.cpp contains the implementations of everything your window does. */
-/*: The next two includes are our own headers that define the interfaces for
- * our window class and the recording device */
-#include "mainwindow.h"
-#include "reader.h"
-/*: `ui_mainwindow.h` is automatically generated from `mainwindow.ui`.
- * It defines the `Ui::MainWindow` class with the widgets as members. */
-#include "ui_mainwindow.h"
+#pragma warning(push)
+#pragma warning(disable : 26812)
 
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
 
 //: Qt headers
 #include <QCloseEvent>
@@ -21,20 +16,89 @@
 #include <lsl_cpp.h>
 #include <string>
 #include <vector>
+#pragma warning( pop )
+
 //: Device headers
 #include <tobii/tobii.h>
+#include <tobii/tobii_streams.h>
 
 
-/*: The constructor mainly sets up the `Ui::MainWindow` class and creates the
- * connections between signals (e.g. 'button X was clicked') and slots
- * (e.g. 'close the window') or functions (e.g. 'save the configuration')
- */
+static auto list_devices(tobii_api_t* api)
+{
+	std::vector<std::string> result;
+	auto error = tobii_enumerate_local_device_urls(api,
+		[](char const* url, void* user_data) // Use a lambda for url receiver function
+		{
+			// Add url string to the supplied result vector
+			auto list = (std::vector<std::string>*) user_data;
+			list->push_back(url);
+		}, &result);
+	// TODO: Handle error.
+	//if (error != TOBII_ERROR_NO_ERROR) std::cerr << "Failed to enumerate devices." << std::endl;
+
+	return result;
+}
+
+
+static auto device_connect(tobii_api_t* api, std::string url, const unsigned int retries, const unsigned int interval, tobii_device_t** device)
+{
+	// std::cout << "Connecting to " << url << " (trying " << retries << " times with " << interval << " milliseconds intervals)." << std::endl;
+
+	unsigned int retry = 0;
+	auto error = TOBII_ERROR_NO_ERROR;
+	do
+	{
+		error = tobii_device_create(api, url.c_str(), TOBII_FIELD_OF_USE_INTERACTIVE, device);
+		if ((error != TOBII_ERROR_CONNECTION_FAILED) && (error != TOBII_ERROR_FIRMWARE_UPGRADE_IN_PROGRESS)) break;
+		std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+		++retry;
+	} while (retry < retries);
+
+	if (error != TOBII_ERROR_NO_ERROR)
+	{
+		// std::cerr << "Failed connecting to " << url;
+		if ((error == TOBII_ERROR_CONNECTION_FAILED) || (error == TOBII_ERROR_FIRMWARE_UPGRADE_IN_PROGRESS))
+		{
+			// std::cerr << " (tried " << retries << " times with " << interval << " milliseconds intervals)";
+		}
+		// std::cerr << "." << std::endl;
+	}
+
+	return error;
+}
+
+
+static auto device_reconnect(tobii_device_t* device, const unsigned int retries, const unsigned int interval)
+{
+	// std::cout << "Reconnecting (trying " << retries << " times with " << interval << " milliseconds intervals)." << std::endl;
+
+	unsigned int retry = 0;
+	auto error = TOBII_ERROR_NO_ERROR;
+	do
+	{
+		error = tobii_device_reconnect(device);
+		if ((error != TOBII_ERROR_CONNECTION_FAILED) && (error != TOBII_ERROR_FIRMWARE_UPGRADE_IN_PROGRESS)) break;
+		std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+		++retry;
+	} while (retry < retries);
+
+	if (error != TOBII_ERROR_NO_ERROR)
+	{
+		// std::cerr << "Failed reconnecting";
+		if ((error == TOBII_ERROR_CONNECTION_FAILED) || (error == TOBII_ERROR_FIRMWARE_UPGRADE_IN_PROGRESS))
+		{
+			// std::cerr << " (tried " << retry << " times with " << interval << " milliseconds intervals)";
+		}
+		// std::cerr << "." << std::endl;
+	}
+
+	return error;
+}
+
+
 MainWindow::MainWindow(QWidget *parent, const char *config_file)
 	: QMainWindow(parent), ui(new Ui::MainWindow) {
 	ui->setupUi(this);
-	/*: C++11 has anonymous functions [lambdas](http://en.cppreference.com/w/cpp/language/lambda)
-	 * that can get defined once where they are needed. They are mainly useful
-	 * for simple actions as a result of an event */
 	connect(ui->actionLoad_Configuration, &QAction::triggered, [this]() {
 		load_config(QFileDialog::getOpenFileName(
 			this, "Load Configuration File", "", "Configuration Files (*.cfg)"));
@@ -51,42 +115,53 @@ MainWindow::MainWindow(QWidget *parent, const char *config_file)
 		QMessageBox::about(this, "About this app", infostr);
 	});
 	connect(ui->linkButton, &QPushButton::clicked, this, &MainWindow::toggleRecording);
-
+	connect(ui->pushButton_refresh, &QPushButton::clicked, this, &MainWindow::refreshDevices);
 
 	//: At the end of the constructor, we load the supplied config file or find it
 	//: in one of the default paths
 	QString cfgfilepath = find_config_file(config_file);
+	refreshDevices();
 	load_config(cfgfilepath);
 }
 
 
-/*: ## Loading / saving the configuration
- * Most apps have some kind of configuration parameters, e.g. which device to
- * use, how to name the channels, ...
- *
- * The settings are mostly saved in `.ini` files. Qt ships with a parser and
- * writer for these kinds of files ([QSettings](http://doc.qt.io/qt-5/qsettings.html)).
- * The general format is `settings.value("key", "default value").toType()`*/
-void MainWindow::load_config(const QString &filename) {
-	QSettings settings(filename, QSettings::Format::IniFormat);
-	ui->input_name->setText(settings.value("BPG/name", "Default name").toString());
-	ui->input_device->setValue(settings.value("BPG/device", 0).toInt());
+void MainWindow::refreshDevices() {
+
+	tobii_api_t* api;
+	auto error = tobii_api_create(&api, nullptr, nullptr);
+	if (error != TOBII_ERROR_NO_ERROR)
+	{
+		//std::cerr << "Failed to initialize the Tobii Stream Engine API." << std::endl;
+	}
+
+	std::vector<std::string> devices = list_devices(api);
+
+	// TOOD: populate a dropdown list.
+	ui->comboBox_device->clear();
+	for each (auto dev_url in devices)
+	{
+		ui->comboBox_device->addItem(QString::fromStdString(dev_url));
+	}
+
+	tobii_api_destroy(api);
 }
 
 
-//: Save function, same as above
+
+void MainWindow::load_config(const QString &filename) {
+	QSettings settings(filename, QSettings::Format::IniFormat);
+	ui->input_name->setText(settings.value("TobiiStreamEngine/name", "TobiiStreamEngine").toString());
+}
+
+
 void MainWindow::save_config(const QString &filename) {
 	QSettings settings(filename, QSettings::Format::IniFormat);
-	settings.beginGroup("BPG");
+	settings.beginGroup("TobiiStreamEngine");
 	settings.setValue("name", ui->input_name->text());
-	settings.setValue("device", ui->input_device->value());
 	settings.sync();
 }
 
 
-/*: ## The close event
- * to avoid accidentally closing the window, we can ignore the close event
- * when there's a recording in progress */
 void MainWindow::closeEvent(QCloseEvent *ev) {
 	if (reader) {
 		QMessageBox::warning(this, "Recording still running", "Can't quit while recording");
@@ -105,32 +180,110 @@ void MainWindow::closeEvent(QCloseEvent *ev) {
  *
  * the shutdown flag indicates that the recording should stop as soon as possible */
 void recording_thread_function(
-	std::string name, int32_t device_param, std::atomic<bool> &shutdown) {
+	std::string name, std::string device_url, std::atomic<bool> &shutdown) {
+
+	// Preinit some variables
+	tobii_api_t* api;
+	std::vector<std::string> devices;
+	std::string selected_device = "";
+	// Try to connect during 30 seconds with an interval of 100 milliseconds
+	const unsigned int retries = 300;
+	const unsigned int interval = 100;
+	tobii_device_t* device = nullptr;
+	
 	//: create an outlet and a send buffer
-	lsl::stream_info info(name, "Counter", 1, 10, lsl::cf_int32);
+	lsl::stream_info info(name, "gaze", 2);
 	lsl::stream_outlet outlet(info);
-	std::vector<int32_t> buffer(1, 20);
 
+	// Create interface to Tobii API
+	auto error = tobii_api_create(&api, nullptr, nullptr);
+	if (error != TOBII_ERROR_NO_ERROR)
+	{
+		//std::cerr << "Failed to initialize the Tobii Stream Engine API." << std::endl;
+		goto cleanup_nodevice;
+	}
 
-	//: Connect to the device, depending on the SDK you might also have to
-	//: create a device object and connect to it via a method call
-	Reader device(device_param);
+	// Get list of devices.
+	devices = list_devices(api);
+	if (devices.size() == 0)
+	{
+		//std::cerr << "No stream engine compatible device(s) found." << std::endl;
+		goto cleanup;
+	}
 
+	// Find device matching device_url
+	if (std::find(devices.begin(), devices.end(), device_url) != devices.end())
+	{
+		selected_device = device_url;
+	}
+	else {
+		goto cleanup;
+	}
 
-	/*: the recording loop. The logic here is as follows:
-	 * - acquire some data
-	 * - copy it to the buffer (here in one step)
-	 * - push it to the outlet
-	 * - do that again unless the shutdown flag was set in the meantime */
+	error = device_connect(api, selected_device, retries, interval, &device);
+	if (error != TOBII_ERROR_NO_ERROR)
+	{
+		goto cleanup;
+	}
+
+	// Start subscribing to gaze and supply lambda callback function to handle the gaze point data
+	error = tobii_gaze_point_subscribe(device,
+		[](tobii_gaze_point_t const* gaze_point, void* user_data)
+		{
+			auto p_outlet = (lsl::stream_outlet*)user_data;  // Cast user_data back to outlet pointer
+			if (gaze_point->validity == TOBII_VALIDITY_VALID)
+			{
+				double timestamp_s = (double)gaze_point->timestamp_us / 1000000;
+				std::vector<float> sample = {gaze_point->position_xy[0], gaze_point->position_xy[1] };
+				p_outlet->push_sample(sample, timestamp_s);
+			}
+			else
+			{
+				//std::cout << "Gaze point: " << gaze_point->timestamp_us << " INVALID" << std::endl;
+			}
+		}, &outlet);
+
 	while (!shutdown) {
-		// "Acquire data"
-		if (device.getData(buffer)) {
-			outlet.push_chunk_multiplexed(buffer);
-		} else {
-			// Acquisition was unsuccessful? -> Quit
+		auto error = tobii_wait_for_callbacks(1, &device);
+
+		if (error == TOBII_ERROR_TIMED_OUT) continue; // If timed out, redo the wait for callbacks call
+		else if (error != TOBII_ERROR_NO_ERROR)
+		{
+			//std::cerr << "tobii_wait_for_callbacks failed: " << tobii_error_message(error) << "." << std::endl;
 			break;
 		}
+		// Calling this function will execute the subscription callback functions
+		error = tobii_device_process_callbacks(device);
+		if (error == TOBII_ERROR_CONNECTION_FAILED)
+		{
+			// Block here while attempting reconnect, if it fails, exit the thread
+			error = device_reconnect(device, interval, retries);
+			if (error != TOBII_ERROR_NO_ERROR)
+			{
+				//std::cerr << "Connection was lost and reconnection failed." << std::endl;
+				break;
+			}
+			continue;
+		}
+		else if (error != TOBII_ERROR_NO_ERROR)
+		{
+			//std::cerr << "tobii_device_process_callbacks failed: " << tobii_error_message(error) << "." << std::endl;
+			break;
+		}
+
 	}
+
+cleanup:
+	error = tobii_gaze_point_unsubscribe(device);
+cleanup_nodevice:
+	if (error != TOBII_ERROR_NO_ERROR) {}
+		//std::cerr << "Failed to unsubscribe from gaze stream." << std::endl;
+	error = tobii_device_destroy(device);
+	if (error != TOBII_ERROR_NO_ERROR) {}
+	//std::cerr << "Failed to destroy device." << std::endl;
+	error = tobii_api_destroy(api);
+	if (error != TOBII_ERROR_NO_ERROR) {}
+	//std::cerr << "Failed to destroy API." << std::endl;
 }
 
 
@@ -146,7 +299,9 @@ void MainWindow::toggleRecording() {
 	if (!reader) {
 		// read the configuration from the UI fields
 		std::string name = ui->input_name->text().toStdString();
-		int32_t device_param = (int32_t)ui->input_device->value();
+
+		// TODO: Get device_url from widget.
+		std::string device_url = ui->comboBox_device->currentText().toStdString();  // TODO: get from ui->comboBox_device
 
 		shutdown = false;
 		/*: `make_unique` allocates a new `std::thread` with our recording
@@ -154,7 +309,7 @@ void MainWindow::toggleRecording() {
 		 * function after that.
 		 * Reference parameters have to be wrapped as a `std::ref`. */
 		reader = std::make_unique<std::thread>(
-			&recording_thread_function, name, device_param, std::ref(shutdown));
+			&recording_thread_function, name, device_url, std::ref(shutdown));
 		ui->linkButton->setText("Unlink");
 	} else {
 		/*: Shutting a thread involves 3 things:

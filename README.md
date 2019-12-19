@@ -6,11 +6,11 @@ Stream data from Tobii consumer devices over LSL.
 
 Download and unzip the Stream Engine for Windows x64 from the bottom of
 [this page](https://developer.tobii.com/consumer-eye-trackers/stream-engine/getting-started/).
-I downloaded stream_engine_windows_x64_4.1.0.3.zip and unzipped it into D:\Tools\Misc\stream_engine_windows_x64
+I downloaded stream_engine_windows_x64_4.1.0.3.zip and unzipped it into C:\Users\chboulay\Tools\stream_engine_windows_x64
 This folder name will be provided to cmake as `Tobii_ROOT`.
 
 Download and unzip the latest liblsl binaries for Win64 from [the liblsl release page](https://github.com/sccn/liblsl/releases).
-I downloaded liblsl-1.13.0-Win64.7z. I unzipped into D:\Tools\Misc\liblsl_install .
+I downloaded liblsl-1.13.0-Win64.7z. I unzipped into C:\Users\chboulay\Tools\liblsl\liblsl .
 This folder name will be provided to cmake as `LSL_INSTALL_ROOT`.
 
 ## Download
@@ -29,16 +29,17 @@ Here is what I had to add to my CMakeSettings.json:
       "variables": [
         {
           "name": "Qt5_DIR",
-          "value": "C:\\Qt\\5.11.1\\msvc2017_64\\lib\\cmake\\Qt5 "
+          "value": "C:\\Qt\\5.12.6\\msvc2017_64\\lib\\cmake\\Qt5 "
         },
         {
           "name": "Tobii_ROOT",
-          "value": "D:\\Tools\\Misc\\stream_engine_windows_x64"
+          "value": "C:\Users\chboulay\Tools\stream_engine_windows_x64"
         },
         {
           "name": "LSL_INSTALL_ROOT",
-          "value": "D:\\Tools\\Misc\\liblsl_install"
+          "value": "C:\Users\chboulay\Tools\liblsl"
         }
+		]
 ```
 
 # License
