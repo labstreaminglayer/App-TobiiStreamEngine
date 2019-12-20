@@ -1,7 +1,15 @@
 # Application Description
 
 Stream data from Tobii consumer devices over LSL.
-So for only a single stream with 2-D gaze points on screen in normalized coordinates is provided.
+Has 2 streams: 
+
+* 2-D gaze points on screen in normalized coordinates is provided.
+* Tobii events
+
+Note that on my system the 2-D gaze points are relatively reliable at 30 Hz.
+However, I opted to go with 'IRREGULAR_RATE' because I don't know if this rate
+is consistent across systems, and I couldn't figure out a way to inspect the rate
+with the SDK.
 
 ## Download
 
