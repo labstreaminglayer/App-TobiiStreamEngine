@@ -24,6 +24,7 @@ private slots:
 	void closeEvent(QCloseEvent *ev) override;
 	void toggleRecording();
 	void refreshDevices();
+	void updateStatus(const char* message);
 
 private:
 	// function for loading / saving the config file

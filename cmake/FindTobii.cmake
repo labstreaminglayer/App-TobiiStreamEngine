@@ -37,6 +37,9 @@
 # 2018 Ryan Pavlik for Sensics, Inc.
 #
 # Copyright Sensics, Inc. 2018.
+#
+# Modified by Chadwick Boulay, 2019-12-20
+#
 
 
 set(Tobii_ROOT

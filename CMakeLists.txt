@@ -14,6 +14,7 @@ cmake_minimum_required(VERSION 3.5)
 project(TobiiStreamEngine
 	LANGUAGES CXX
 	VERSION 0.1)
+cmake_policy(SET CMP0074 NEW)
 
 #: [project](https://cmake.org/cmake/help/latest/command/project.html) sets the
 #: name of the app, the languages used and the version. The version is later on

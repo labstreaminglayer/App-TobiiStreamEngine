@@ -1,8 +1,15 @@
 # Application Description
 
 Stream data from Tobii consumer devices over LSL.
+So for only a single stream with 2-D gaze points on screen in normalized coordinates is provided.
 
-## Dependencies
+## Download
+
+Find the latest release on [the release page](https://github.com/labstreaminglayer/App-TobiiStreamEngine/releases).
+Note that you will need to provide your own copy of tobii_stream_engine.dll and put it in the same folder.
+Find it [here](https://developer.tobii.com/consumer-eye-trackers/stream-engine/getting-started/)
+
+## Build Dependencies
 
 Download and unzip the Stream Engine for Windows x64 from the bottom of
 [this page](https://developer.tobii.com/consumer-eye-trackers/stream-engine/getting-started/).
@@ -12,10 +19,6 @@ This folder name will be provided to cmake as `Tobii_ROOT`.
 Download and unzip the latest liblsl binaries for Win64 from [the liblsl release page](https://github.com/sccn/liblsl/releases).
 I downloaded liblsl-1.13.0-Win64.7z. I unzipped into C:\Users\chboulay\Tools\liblsl\liblsl .
 This folder name will be provided to cmake as `LSL_INSTALL_ROOT`.
-
-## Download
-
-When the app is done, downloads will be available on the releases page.
 
 # Build
 

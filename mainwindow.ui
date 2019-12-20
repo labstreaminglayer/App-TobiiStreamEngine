@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>281</width>
-    <height>166</height>
+    <height>189</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>BestPracticesGUI Connector</string>
+   <string>Tobii (Stream Engine) LSL</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QFormLayout" name="formLayout_2">
