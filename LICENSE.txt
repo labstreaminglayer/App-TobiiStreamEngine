@@ -1,4 +1,6 @@
-MIT License
+The source code unique to this repository is provided under the MIT License
+However, the compiled code is only useful when linking to third party libraries, listed at the bottom of this page.
+Please refer to their licenses to determine if your intended use is compliant.
 
 Copyright (c) 2019 Chadwick Boulay
 
